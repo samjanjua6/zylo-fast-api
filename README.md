@@ -2,6 +2,8 @@
 
 A small FastAPI project with a single `users` table, basic signup/login endpoints, and a modular folder structure.
 
+It now includes a lightweight browser UI at `/` so you can test the endpoints without using Swagger.
+
 ## What It Does
 
 - Creates users with hashed passwords
@@ -70,8 +72,19 @@ uvicorn main:app --reload
 
 Then open:
 
+- App UI: http://127.0.0.1:8000/
 - Swagger UI: http://127.0.0.1:8000/docs
 - OpenAPI JSON: http://127.0.0.1:8000/openapi.json
+
+## Browser UI
+
+The root page provides three simple forms:
+
+- Sign Up creates a user with `POST /signup`
+- Login authenticates with `POST /login`
+- Get User fetches public info with `GET /users/{user_id}`
+
+Responses are printed in a readable JSON panel so you can test success and failure cases quickly.
 
 ## Endpoints
 

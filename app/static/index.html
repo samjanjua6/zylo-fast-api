@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple FastAPI User API</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">FastAPI Endpoint Tester</p>
+          <h1>Test signup, login, and user lookup without opening /docs.</h1>
+          <p class="subtitle">A plain HTML, CSS, and JavaScript frontend for the modular FastAPI user API.</p>
+        </div>
+        <div class="status-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong>Live API tester</strong>
+            <p>Uses the same backend at <code>/signup</code>, <code>/login</code>, and <code>/users/{id}</code>.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Sign Up</h2>
+          <form id="signup-form" class="stack">
+            <label>
+              Username
+              <input name="username" type="text" placeholder="alice" required />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" placeholder="alice@example.com" required />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" placeholder="secret1" required />
+            </label>
+            <button type="submit">Create user</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Login</h2>
+          <form id="login-form" class="stack">
+            <label>
+              Username or email
+              <input name="username_or_email" type="text" placeholder="alice or alice@example.com" required />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" placeholder="secret1" required />
+            </label>
+            <button type="submit">Login</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>Get User</h2>
+          <form id="user-form" class="stack">
+            <label>
+              User ID
+              <input name="user_id" type="number" min="1" placeholder="1" required />
+            </label>
+            <button type="submit">Fetch user</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="card output-card">
+        <div class="output-header">
+          <h2>Response</h2>
+          <button id="clear-output" type="button" class="ghost">Clear</button>
+        </div>
+        <pre id="output">Use one of the forms above to test the API.</pre>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
