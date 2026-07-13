@@ -68,7 +68,7 @@ export default function ChatPage() {
       addMessage('⚠ Session expired. Redirecting to login…', 'system')
       localStorage.removeItem('zylo_token')
       localStorage.removeItem('zylo_username')
-      setTimeout(() => navigate('/', { replace: true }), 1800)
+      setTimeout(() => navigate('/login', { replace: true }), 1800)
     } else if (status === 'error') {
       addMessage('Connection error — check the backend.', 'system')
     }
@@ -85,11 +85,11 @@ export default function ChatPage() {
   function handleLogout() {
     localStorage.removeItem('zylo_token')
     localStorage.removeItem('zylo_username')
-    navigate('/', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   return (
-    <div className="flex flex-col h-screen bg-canvas">
+    <div className="flex flex-col h-screen overflow-hidden">
       <TopBar username={username} wsStatus={wsStatus} onLogout={handleLogout} />
       <MessageList messages={messages} username={username} />
       <ChatInput onSend={handleSend} disabled={wsStatus !== 'online'} />

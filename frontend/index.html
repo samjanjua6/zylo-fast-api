@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/frontend/styles.css" />
 </head>
+
 <body class="auth-page">
 
   <!-- Animated background orbs -->
@@ -25,14 +27,16 @@
       <!-- Branding -->
       <div class="auth-logo">
         <span class="logo-icon">⚡</span>
-        <span class="logo-text">Zylo</span>
+        <span class="logo-text">Apna-chatbot</span>
       </div>
       <p class="auth-tagline">AI-powered chat, secured with JWT.</p>
 
       <!-- Tab switcher -->
       <div class="auth-tabs" role="tablist" aria-label="Authentication">
-        <button id="tab-login"  class="auth-tab active" role="tab" aria-selected="true"  aria-controls="panel-login">Sign In</button>
-        <button id="tab-signup" class="auth-tab"        role="tab" aria-selected="false" aria-controls="panel-signup">Sign Up</button>
+        <button id="tab-login" class="auth-tab active" role="tab" aria-selected="true" aria-controls="panel-login">Sign
+          In</button>
+        <button id="tab-signup" class="auth-tab" role="tab" aria-selected="false" aria-controls="panel-signup">Sign
+          Up</button>
       </div>
 
       <!-- Alert banner -->
@@ -43,25 +47,13 @@
         <form id="login-form" class="auth-form" novalidate>
           <div class="field-group">
             <label for="login-identifier">Username or email</label>
-            <input
-              id="login-identifier"
-              name="username_or_email"
-              type="text"
-              placeholder="alice or alice@example.com"
-              autocomplete="username"
-              required
-            />
+            <input id="login-identifier" name="username_or_email" type="text" placeholder="alice or alice@example.com"
+              autocomplete="username" required />
           </div>
           <div class="field-group">
             <label for="login-password">Password</label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              placeholder="Your password"
-              autocomplete="current-password"
-              required
-            />
+            <input id="login-password" name="password" type="password" placeholder="Your password"
+              autocomplete="current-password" required />
           </div>
           <button id="login-submit" type="submit" class="btn-primary">
             <span class="btn-text">Sign In</span>
@@ -79,42 +71,21 @@
         <form id="signup-form" class="auth-form" novalidate>
           <div class="field-group">
             <label for="signup-username">Username</label>
-            <input
-              id="signup-username"
-              name="username"
-              type="text"
-              placeholder="alice"
-              autocomplete="username"
-              required
-              minlength="3"
-              maxlength="50"
-            />
+            <input id="signup-username" name="username" type="text" placeholder="alice" autocomplete="username" required
+              minlength="3" maxlength="50" />
           </div>
           <div class="field-group">
             <label for="signup-email">Email</label>
-            <input
-              id="signup-email"
-              name="email"
-              type="email"
-              placeholder="alice@example.com"
-              autocomplete="email"
-              required
-            />
+            <input id="signup-email" name="email" type="email" placeholder="alice@example.com" autocomplete="email"
+              required />
           </div>
           <div class="field-group">
             <label for="signup-password">
               Password
               <span class="field-hint">min. 6 characters</span>
             </label>
-            <input
-              id="signup-password"
-              name="password"
-              type="password"
-              placeholder="Create a strong password"
-              autocomplete="new-password"
-              required
-              minlength="6"
-            />
+            <input id="signup-password" name="password" type="password" placeholder="Create a strong password"
+              autocomplete="new-password" required minlength="6" />
           </div>
           <button id="signup-submit" type="submit" class="btn-primary">
             <span class="btn-text">Create Account</span>
@@ -132,4 +103,5 @@
 
   <script src="/frontend/app.js"></script>
 </body>
+
 </html>

@@ -2,7 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth scrollbar for chat */
+/* ─── Theme token definitions ──────────────────────────────────────────────── */
+
+/* Dark (default) */
+:root {
+  --canvas:       #080b14;
+  --mesh-a:       rgba(79, 70, 229, 0.22);
+  --mesh-b:       rgba(139, 92, 246, 0.15);
+  --mesh-c:       rgba(59, 130, 246, 0.10);
+
+  --glass-bg:     rgba(255, 255, 255, 0.05);
+  --glass-hi:     rgba(255, 255, 255, 0.09);
+  --glass-input:  rgba(0,   0,   0,   0.28);
+
+  --border:       rgba(255, 255, 255, 0.10);
+  --border-s:     rgba(255, 255, 255, 0.06);
+
+  --text-1:       rgba(255, 255, 255, 0.93);
+  --text-2:       rgba(255, 255, 255, 0.50);
+  --text-3:       rgba(255, 255, 255, 0.25);
+
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.55);
+
+  --pill-active:  rgba(255, 255, 255, 0.12);
+}
+
+/* Light */
+[data-theme="light"] {
+  --canvas:       #eef2ff;
+  --mesh-a:       rgba(99,  102, 241, 0.22);
+  --mesh-b:       rgba(167, 139, 250, 0.20);
+  --mesh-c:       rgba(96,  165, 250, 0.15);
+
+  --glass-bg:     rgba(255, 255, 255, 0.60);
+  --glass-hi:     rgba(255, 255, 255, 0.85);
+  --glass-input:  rgba(255, 255, 255, 0.50);
+
+  --border:       rgba(0,   0,   0,   0.09);
+  --border-s:     rgba(0,   0,   0,   0.05);
+
+  --text-1:       rgba(15,  15,  40,  0.93);
+  --text-2:       rgba(15,  15,  40,  0.52);
+  --text-3:       rgba(15,  15,  40,  0.30);
+
+  --shadow:       0 8px 32px rgba(99, 102, 241, 0.15);
+
+  --pill-active:  rgba(99,  102, 241, 0.12);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    /* Smooth colour transitions when theme flips */
+    transition: background-color 0.4s ease;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-1);
+    min-height: 100svh;
+    /* Ambient mesh blobs via layered radial gradients */
+    background-image:
+      radial-gradient(ellipse 60% 50% at 10%  15%, var(--mesh-a), transparent),
+      radial-gradient(ellipse 55% 45% at 90%  80%, var(--mesh-b), transparent),
+      radial-gradient(ellipse 40% 60% at 55%  50%, var(--mesh-c), transparent);
+    background-attachment: fixed;
+  }
+
+  /* Smooth border / bg transitions on all glass elements */
+  * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.2s ease, box-shadow 0.3s ease; }
+  /* But don't apply to motion elements — Framer Motion handles those */
+  [data-framer-component-type] { transition: none; }
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }

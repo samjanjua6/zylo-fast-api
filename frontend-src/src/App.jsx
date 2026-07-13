@@ -1,17 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
 
 /** Guard: redirect unauthenticated users to /login */
 function PrivateRoute({ children }) {
-  return localStorage.getItem('zylo_token') ? children : <Navigate to="/" replace />
+  return localStorage.getItem('zylo_token') ? children : <Navigate to="/login" replace />
 }
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AuthPage />} />
+        {/* New public landing page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Auth routes */}
+        <Route path="/login" element={<AuthPage />} />
+        
+        {/* Protected routes */}
         <Route
           path="/chat"
           element={
@@ -20,6 +27,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

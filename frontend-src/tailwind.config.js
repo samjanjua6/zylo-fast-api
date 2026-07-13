@@ -29,6 +29,9 @@ export default {
         fadeUp: 'fadeUp 0.22s ease forwards',
         fadeIn: 'fadeIn 0.2s ease forwards',
       },
+      backgroundImage: {
+        'mesh-dark': "radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%)",
+      }
     },
   },
   plugins: [],

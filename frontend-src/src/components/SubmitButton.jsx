@@ -1,26 +1,21 @@
+import { motion } from 'framer-motion'
+
 /**
  * SubmitButton — the ONLY element that carries the brand gradient.
- *
- * Design rule: accent gradient is restricted to primary CTAs only.
- * All other interactive elements (pill tabs, ghost buttons) use neutral tones.
+ * Design rule: the indigo→violet gradient is reserved for primary CTAs only.
  */
 export default function SubmitButton({ children, loading }) {
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.02, opacity: 0.92 }}
+      whileTap={{ scale: 0.98 }}
       type="submit"
       disabled={loading}
-      className={[
-        'w-full mt-2 py-3',
-        'rounded-xl',
-        'text-[0.93rem] font-semibold text-white',
-        'bg-gradient-to-r from-indigo-500 to-violet-500',
-        'shadow-[0_4px_20px_rgba(99,102,241,0.35)]',
-        'transition-all duration-150',
-        'hover:opacity-90 hover:-translate-y-px hover:shadow-[0_6px_28px_rgba(99,102,241,0.5)]',
-        'active:translate-y-0 active:opacity-100',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0',
-        'flex items-center justify-center gap-2',
-      ].join(' ')}
+      className="w-full mt-2 py-3 rounded-xl text-[0.93rem] font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{
+        background:  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        boxShadow:   '0 4px 20px rgba(99,102,241,0.35)',
+      }}
     >
       {loading ? (
         <>
@@ -30,6 +25,6 @@ export default function SubmitButton({ children, loading }) {
       ) : (
         children
       )}
-    </button>
+    </motion.button>
   )
 }

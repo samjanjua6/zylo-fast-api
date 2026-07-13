@@ -1,82 +1,80 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import LoginForm from '../components/LoginForm'
 import SignupForm from '../components/SignupForm'
+import ThemeToggle from '../components/ThemeToggle'
 
-/** Segmented pill control — switches between Login and Signup states */
+const glass = {
+  background:    'var(--glass-bg)',
+  border:        '1px solid var(--border)',
+  backdropFilter:'blur(24px)',
+  WebkitBackdropFilter: 'blur(24px)',
+  boxShadow:     'var(--shadow)',
+}
+
 function SegmentedControl({ mode, onChange }) {
-  const base =
-    'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer'
-  const active = 'bg-ridge text-slate-100'
-  const inactive = 'text-slate-500 hover:text-slate-300'
-
   return (
     <div
       role="tablist"
-      className="flex bg-canvas border border-edge rounded-xl p-1 mb-8"
+      className="flex p-1 rounded-xl mb-7"
+      style={{ background: 'var(--glass-input)', border: '1px solid var(--border-s)' }}
     >
-      <button
-        role="tab"
-        aria-selected={mode === 'login'}
-        onClick={() => onChange('login')}
-        className={`${base} ${mode === 'login' ? active : inactive}`}
-      >
-        Sign In
-      </button>
-      <button
-        role="tab"
-        aria-selected={mode === 'signup'}
-        onClick={() => onChange('signup')}
-        className={`${base} ${mode === 'signup' ? active : inactive}`}
-      >
-        Sign Up
-      </button>
+      {['login', 'signup'].map((m) => (
+        <button
+          key={m}
+          role="tab"
+          aria-selected={mode === m}
+          onClick={() => onChange(m)}
+          className="flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 relative"
+          style={{ color: mode === m ? 'var(--text-1)' : 'var(--text-2)' }}
+        >
+          {mode === m && (
+            <motion.span
+              layoutId="pill-active"
+              className="absolute inset-0 rounded-lg"
+              style={{ background: 'var(--pill-active)' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            />
+          )}
+          <span className="relative z-10">{m === 'login' ? 'Sign In' : 'Sign Up'}</span>
+        </button>
+      ))}
     </div>
   )
 }
 
-/** Inline status banner — shown above the form when something happens */
 function Alert({ alert }) {
   if (!alert) return null
-  const styles =
-    alert.type === 'success'
-      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-      : 'bg-red-500/10 border-red-500/20 text-red-300'
+  const isSuccess = alert.type === 'success'
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
       role="alert"
-      className={`mb-5 px-4 py-3 rounded-xl text-sm border ${styles} animate-[fadeIn_0.2s_ease]`}
+      className="mb-5 px-4 py-3 rounded-xl text-sm border"
+      style={{
+        background: isSuccess ? 'rgba(52,211,153,0.08)' : 'rgba(239,68,68,0.08)',
+        borderColor: isSuccess ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)',
+        color: isSuccess ? '#34d399' : '#f87171',
+      }}
     >
       {alert.message}
-    </div>
+    </motion.div>
   )
 }
 
-/**
- * AuthPage
- *
- * Design decisions:
- * - Only ONE form is ever visible at a time — driven by `mode` state.
- * - Toggle is a segmented pill at the top of the card (no hidden tabs).
- * - The accent gradient is reserved exclusively for the CTA submit button.
- * - Card sits on a deep canvas; it has a slightly lighter background + edge border.
- * - Inputs are bare (transparent-dark bg, subtle border, indigo focus ring).
- */
 export default function AuthPage() {
   const [mode, setMode] = useState('login')
   const [alert, setAlert] = useState(null)
   const navigate = useNavigate()
 
-  // Redirect if already logged in
   if (localStorage.getItem('zylo_token')) {
     navigate('/chat', { replace: true })
     return null
   }
 
-  function handleModeChange(next) {
-    setAlert(null)
-    setMode(next)
-  }
+  function handleModeChange(next) { setAlert(null); setMode(next) }
 
   function handleLoginSuccess(data) {
     localStorage.setItem('zylo_token', data.access_token)
@@ -85,51 +83,67 @@ export default function AuthPage() {
   }
 
   function handleSignupSuccess(username) {
-    setAlert({
-      type: 'success',
-      message: `✓ Account "${username}" created — sign in now.`,
-    })
+    setAlert({ type: 'success', message: `✓ Account "${username}" created — sign in now.` })
     setMode('login')
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Subtle ambient glow — does not dominate */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-indigo-600/8 blur-3xl" />
-        <div className="absolute -bottom-48 -right-32 w-[400px] h-[400px] rounded-full bg-violet-600/6 blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Theme toggle (fixed top-right) */}
+      <div className="fixed top-5 right-5 z-50">
+        <ThemeToggle />
       </div>
 
       <div className="relative w-full max-w-sm">
-        {/* ── Brand mark ── */}
-        <header className="flex items-center justify-center gap-2.5 mb-8">
+        {/* Brand */}
+        <motion.header
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 15 }}
+          className="flex items-center justify-center gap-2.5 mb-7"
+        >
           <span className="text-2xl leading-none" aria-hidden>⚡</span>
-          <span className="text-[1.6rem] font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent tracking-tight">
+          <span className="text-[1.65rem] font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent tracking-tight">
             Zylo
           </span>
-        </header>
+        </motion.header>
 
-        {/* ── Auth card ── */}
-        <main className="bg-surface border border-edge rounded-2xl p-8 shadow-card">
+        {/* Card */}
+        <motion.main
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 120, damping: 14, delay: 0.1 }}
+          style={glass}
+          className="rounded-3xl p-8"
+        >
           <SegmentedControl mode={mode} onChange={handleModeChange} />
 
           <Alert alert={alert} />
 
-          {mode === 'login' ? (
-            <LoginForm
-              onSuccess={handleLoginSuccess}
-              onError={(msg) => setAlert({ type: 'error', message: msg })}
-            />
-          ) : (
-            <SignupForm
-              onSuccess={handleSignupSuccess}
-              onError={(msg) => setAlert({ type: 'error', message: msg })}
-            />
-          )}
-        </main>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, x: mode === 'login' ? -12 : 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: mode === 'login' ? 12 : -12 }}
+              transition={{ duration: 0.18 }}
+            >
+              {mode === 'login' ? (
+                <LoginForm
+                  onSuccess={handleLoginSuccess}
+                  onError={(msg) => setAlert({ type: 'error', message: msg })}
+                />
+              ) : (
+                <SignupForm
+                  onSuccess={handleSignupSuccess}
+                  onError={(msg) => setAlert({ type: 'error', message: msg })}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.main>
 
-        {/* ── Footer note ── */}
-        <p className="text-center text-xs text-slate-700 mt-5">
+        <p className="text-center text-xs mt-5" style={{ color: 'var(--text-3)' }}>
           Secured with JWT · Powered by FastAPI
         </p>
       </div>

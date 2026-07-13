@@ -20,10 +20,20 @@ export default function ChatInput({ onSend, disabled }) {
   }
 
   return (
-    <footer className="shrink-0 px-6 pb-6 pt-3 bg-surface border-t border-edge">
+    <footer
+      className="shrink-0 px-6 pb-6 pt-3"
+      style={{ borderTop: '1px solid var(--border)', background: 'var(--glass-bg)', backdropFilter: 'blur(20px)' }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-3 bg-canvas border border-edge rounded-2xl px-5 py-2 focus-within:border-indigo-500/40 focus-within:ring-2 focus-within:ring-indigo-500/8 transition-all duration-150"
+        className="flex items-center gap-3 px-5 py-2 rounded-2xl transition-all duration-150"
+        style={{
+          background:  'var(--glass-input)',
+          border:      '1px solid var(--border)',
+          backdropFilter: 'blur(16px)',
+        }}
+        onFocusCapture={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,0.45)'}
+        onBlurCapture={e =>  e.currentTarget.style.borderColor = 'var(--border)'}
       >
         <input
           ref={inputRef}
@@ -32,18 +42,22 @@ export default function ChatInput({ onSend, disabled }) {
           disabled={disabled}
           maxLength={2000}
           aria-label="Message input"
-          className="flex-1 bg-transparent outline-none text-sm text-slate-100 placeholder-slate-600 py-2 disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent outline-none text-sm disabled:cursor-not-allowed"
+          style={{
+            color: 'var(--text-1)',
+          }}
         />
         <button
           type="submit"
           disabled={disabled}
           aria-label="Send message"
-          className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white shrink-0 shadow-[0_2px_12px_rgba(99,102,241,0.4)] hover:opacity-85 hover:scale-105 active:scale-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 transition-all duration-150 hover:opacity-85 hover:scale-105 active:scale-100 disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 12px rgba(99,102,241,0.4)' }}
         >
           <SendIcon />
         </button>
       </form>
-      <p className="text-center text-xs text-slate-700 mt-2.5">
+      <p className="text-center text-xs mt-2.5" style={{ color: 'var(--text-3)' }}>
         Secured with JWT · Real-time via WebSocket
       </p>
     </footer>
