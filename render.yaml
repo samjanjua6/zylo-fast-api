@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: zylo-backend
+    env: python
+    buildCommand: bash build.sh
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zylo-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+databases:
+  - name: zylo-db
+    databaseName: zylodb
+    user: zylo_user
