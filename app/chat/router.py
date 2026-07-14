@@ -34,7 +34,7 @@ async def chat_socket(
 
     await websocket.accept()
     await websocket.send_text(
-        f"Hello **{user.username}**! I'm Zylo AI, powered by Gemini. How can I help you today?"
+        f"Aao **{user.username}**, baitho. Hum Munna Bhaiya hain, Mirzapur ke agle king. Bol, kya bawal laaye ho aaj?"
     )
 
     # In-memory conversation history for this WebSocket session.

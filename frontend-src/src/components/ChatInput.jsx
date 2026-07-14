@@ -20,7 +20,7 @@ export default function ChatInput({ onSend, disabled, isStreaming }) {
   }
 
   const isLocked = disabled || isStreaming
-  const placeholder = disabled ? 'Connecting…' : isStreaming ? 'Zylo AI is thinking…' : 'Send a message…'
+  const placeholder = disabled ? 'Connecting…' : isStreaming ? 'Munna Bhaiya soch rahe hain…' : 'Bolo kya kaam hai…'
 
   return (
     <footer
