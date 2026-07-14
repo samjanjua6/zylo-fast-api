@@ -2,32 +2,31 @@ from __future__ import annotations
 
 from typing import AsyncGenerator
 
-from google import genai
-from google.genai import types
+from groq import AsyncGroq
 
 from ..core.config import settings
 from .prompts import build_system_prompt
 
 
-def _client() -> genai.Client:
-    """Return a configured Gemini client."""
-    return genai.Client(api_key=settings.GEMINI_API_KEY)
+def _client() -> AsyncGroq:
+    """Return a configured async Groq client."""
+    return AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 
-def _to_gemini_history(history: list[dict]) -> list[types.Content]:
+def _to_groq_history(history: list[dict]) -> list[dict]:
     """
-    Convert our internal message history to Gemini Content objects.
+    Convert our internal message history to Groq-compatible message objects.
 
     Each item in `history` is expected to be:
         {"role": "user" | "model", "text": "..."}
+        
+    Groq expects "assistant" instead of "model" and "content" instead of "text".
     """
-    return [
-        types.Content(
-            role=msg["role"],
-            parts=[types.Part(text=msg["text"])],
-        )
-        for msg in history
-    ]
+    groq_history = []
+    for msg in history:
+        role = "assistant" if msg["role"] == "model" else msg["role"]
+        groq_history.append({"role": role, "content": msg["text"]})
+    return groq_history
 
 
 async def stream_reply(
@@ -36,7 +35,7 @@ async def stream_reply(
     retrieved_context: str = "",
 ) -> AsyncGenerator[str, None]:
     """
-    Stream a Gemini reply token-by-token over an async generator.
+    Stream a Groq reply token-by-token over an async generator.
 
     Args:
         history:           List of previous turns [{role, text}, ...].
@@ -50,23 +49,21 @@ async def stream_reply(
     client = _client()
     system_prompt = build_system_prompt(retrieved_context)
 
-    # Append the new user turn to the history for the API call
-    contents = _to_gemini_history(history) + [
-        types.Content(
-            role="user",
-            parts=[types.Part(text=user_message)],
-        )
-    ]
+    # Prepare messages payload
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(_to_groq_history(history))
+    messages.append({"role": "user", "content": user_message})
 
-    response_stream = await client.aio.models.generate_content_stream(
-        model="gemini-2.0-flash",
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.7,
-            max_output_tokens=2048,
-        ),
+    # Call the Groq API with streaming enabled
+    stream = await client.chat.completions.create(
+        model="llama-3.3-70b-versatile",  # Defaulting to a fast, reliable Groq model
+        messages=messages,
+        temperature=0.7,
+        max_tokens=2048,
+        stream=True,
     )
-    async for chunk in response_stream:
-        if chunk.text:
-            yield chunk.text
+    
+    async for chunk in stream:
+        content = chunk.choices[0].delta.content
+        if content:
+            yield content

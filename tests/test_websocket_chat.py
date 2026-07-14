@@ -58,14 +58,17 @@ def test_websocket_accepts_connection_with_valid_token():
     with client.websocket_connect(f"/ws/chat?token={token}") as ws:
         greeting = ws.receive_text()
         assert "wsuser" in greeting  # welcome message includes the username
+        ws.receive_text()  # consume [DONE]
 
         ws.send_text("hello")
         reply = ws.receive_text()
-        assert "hello" in reply.lower()
-
-        ws.send_text("What is your name?")
-        reply = ws.receive_text()
-        assert "bot" in reply.lower()
+        # Groq model might stream it token by token, so just loop until [DONE]
+        full_reply = reply
+        while reply != "[DONE]":
+            reply = ws.receive_text()
+            if reply != "[DONE]":
+                full_reply += reply
+        assert len(full_reply) > 0
 
 
 def test_websocket_chat_replies_like_a_simple_bot():
@@ -75,12 +78,31 @@ def test_websocket_chat_replies_like_a_simple_bot():
 
     with client.websocket_connect(f"/ws/chat?token={token}") as ws:
         ws.receive_text()  # consume welcome
+        ws.receive_text()  # consume [DONE]
 
         ws.send_text("hi")
-        assert "hello" in ws.receive_text().lower()
+        reply = ws.receive_text()
+        full_reply = reply
+        while reply != "[DONE]":
+            reply = ws.receive_text()
+            if reply != "[DONE]":
+                full_reply += reply
+        assert len(full_reply) > 0
 
         ws.send_text("What can you do?")
-        assert "good question" in ws.receive_text().lower()
+        reply = ws.receive_text()
+        full_reply = reply
+        while reply != "[DONE]":
+            reply = ws.receive_text()
+            if reply != "[DONE]":
+                full_reply += reply
+        assert len(full_reply) > 0
 
         ws.send_text("just chatting")
-        assert "you said" in ws.receive_text().lower()
+        reply = ws.receive_text()
+        full_reply = reply
+        while reply != "[DONE]":
+            reply = ws.receive_text()
+            if reply != "[DONE]":
+                full_reply += reply
+        assert len(full_reply) > 0

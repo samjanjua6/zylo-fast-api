@@ -17,7 +17,7 @@ async def chat_socket(
     token: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """Authenticated WebSocket chat endpoint powered by Gemini AI.
+    """Authenticated WebSocket chat endpoint powered by Groq AI.
 
     Clients must pass a valid JWT as the ``?token=`` query parameter.
     Unauthorized connections are rejected with close code 1008 (Policy Violation).
@@ -60,14 +60,14 @@ async def chat_socket(
             retrieved_context = ""   # ← replace with your retriever call
             # ─────────────────────────────────────────────────────────────────
 
-            # Stream the Gemini reply token-by-token
+            # Stream the Groq reply token-by-token
             full_reply = ""
             try:
                 async for token_chunk in stream_reply(history, user_message, retrieved_context):
                     full_reply += token_chunk
                     await websocket.send_text(token_chunk)
             except Exception as e:
-                err_msg = f"\n\n[System Error: Failed to generate response from Gemini. It might be a quota limit (429) or invalid API key. Details: {str(e)}]"
+                err_msg = f"\n\n[System Error: Failed to generate response from Groq. It might be a quota limit or invalid API key. Details: {str(e)}]"
                 full_reply += err_msg
                 await websocket.send_text(err_msg)
 
