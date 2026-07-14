@@ -70,8 +70,8 @@ export default function ChatPage() {
     if (urlToken) {
       localStorage.setItem('zylo_token',    urlToken)
       localStorage.setItem('zylo_username', urlUsername || 'You')
-      // Clean the URL so the token doesn't sit in browser history
-      window.history.replaceState({}, '', '/chat')
+      // Force a clean reload so the app re-initializes with the new token
+      window.location.replace('/chat')
     }
   }, [])
 
