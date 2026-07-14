@@ -120,20 +120,9 @@ export default function ChatPage() {
     fetchMessages()
   }, [activeSessionId, token])
 
-  const createNewSession = async () => {
-    try {
-      const res = await fetch('/api/chat/sessions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const newSession = await res.json()
-        setSessions(prev => [newSession, ...prev])
-        setActiveSessionId(newSession.id)
-      }
-    } catch (err) {
-      console.error("Failed to create new session", err)
-    }
+  const createNewSession = () => {
+    setActiveSessionId(null)
+    setMessages([])
   }
 
   // Append a brand-new message bubble
@@ -178,6 +167,12 @@ export default function ChatPage() {
   const streamingRef = useRef(false)
 
   const handleChunk = useCallback((data) => {
+    if (data.startsWith('[SESSION_ID:')) {
+      const newId = parseInt(data.replace('[SESSION_ID:', '').replace(']', ''))
+      setActiveSessionId(newId)
+      fetchSessions() // to refresh sidebar
+      return
+    }
     // First non-DONE message after quiet period → start a new bubble
     if (data === DONE_SENTINEL) {
       finishBotStream()
@@ -189,7 +184,7 @@ export default function ChatPage() {
       streamingRef.current = true
     }
     appendToLastBot(data)
-  }, [startBotStream, appendToLastBot, finishBotStream])
+  }, [startBotStream, appendToLastBot, finishBotStream, fetchSessions])
 
   const handleStatus = useCallback((status) => {
     setWsStatus(status)
@@ -210,12 +205,6 @@ export default function ChatPage() {
     streamingRef.current = false
     addMessage(text, 'user')
     send(text)
-    
-    // Auto-create session on first message if none active
-    if (!activeSessionId && sessions.length === 0) {
-      // It's created implicitly by websocket, we might just want to refresh sessions
-      setTimeout(fetchSessions, 1000)
-    }
   }
 
   function handleLogout() {

@@ -81,22 +81,15 @@ async def chat_socket(
             select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user.id)
         )
     
-    if not chat_session:
-        # Create a new session if none provided or invalid
-        chat_session = ChatSession(user_id=user.id, title="New Chat")
-        db.add(chat_session)
-        db.commit()
-        db.refresh(chat_session)
-    
-    # Load history from DB
-    db_messages = db.scalars(
-        select(ChatMessage)
-        .where(ChatMessage.session_id == chat_session.id)
-        .order_by(ChatMessage.created_at.asc())
-    ).all()
-
-    # Format history for the AI service
-    history = [{"role": m.role, "text": m.content} for m in db_messages]
+    # Load history from DB if session exists
+    history = []
+    if chat_session:
+        db_messages = db.scalars(
+            select(ChatMessage)
+            .where(ChatMessage.session_id == chat_session.id)
+            .order_by(ChatMessage.created_at.asc())
+        ).all()
+        history = [{"role": m.role, "text": m.content} for m in db_messages]
 
     await websocket.accept()
 
@@ -113,6 +106,16 @@ async def chat_socket(
 
             if not user_message.strip():
                 continue
+
+            # If no active session, create one dynamically upon first user prompt
+            if not chat_session:
+                title = user_message[:30] + ("..." if len(user_message) > 30 else "")
+                chat_session = ChatSession(user_id=user.id, title=title)
+                db.add(chat_session)
+                db.commit()
+                db.refresh(chat_session)
+                # Inform the frontend to update its active session
+                await websocket.send_text(f"[SESSION_ID:{chat_session.id}]")
 
             # Save user message
             msg = ChatMessage(session_id=chat_session.id, role="user", content=user_message)
