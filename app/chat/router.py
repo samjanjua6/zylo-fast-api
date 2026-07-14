@@ -72,6 +72,8 @@ def delete_session(
     if not session:
         return {"success": False, "error": "Session not found or unauthorized"}
     
+    # Delete all messages associated with the session first to avoid foreign key constraint errors
+    db.query(ChatMessage).filter(ChatMessage.session_id == session.id).delete()
     db.delete(session)
     db.commit()
     return {"success": True}

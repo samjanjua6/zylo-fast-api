@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # Groq AI
     GROQ_API_KEY: str = ""
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -61,6 +61,20 @@ function useWebSocket(token, sessionId, onChunk, onStatusChange) {
 
 export default function ChatPage() {
   const navigate = useNavigate()
+
+  // ── Handle Google OAuth redirect (?token=...&username=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const urlToken    = params.get('token')
+    const urlUsername = params.get('username')
+    if (urlToken) {
+      localStorage.setItem('zylo_token',    urlToken)
+      localStorage.setItem('zylo_username', urlUsername || 'You')
+      // Clean the URL so the token doesn't sit in browser history
+      window.history.replaceState({}, '', '/chat')
+    }
+  }, [])
+
   const token    = localStorage.getItem('zylo_token') ?? ''
   const username = localStorage.getItem('zylo_username') ?? 'You'
 
@@ -121,8 +135,9 @@ export default function ChatPage() {
   }, [activeSessionId, token])
 
   const createNewSession = async () => {
-    // Do not create a new session if the current session is already empty
-    if (messages.length === 0) return;
+    // Do not create a new session if the current session has no user messages
+    const hasUserMessages = messages.some(m => m.type === 'user');
+    if (!hasUserMessages) return;
 
     try {
       const res = await fetch('/api/chat/sessions', {

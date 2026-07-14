@@ -44,10 +44,12 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         or_(User.username == identifier, User.email == identifier.lower())
     ).first()
-    if user is None or not verify_password(payload.password, user.hashed_password):
+    if user is None or not user.hashed_password or not verify_password(payload.password, user.hashed_password):
+        detail = "This account uses Google Sign-In. Please use the 'Continue with Google' button." \
+            if (user and not user.hashed_password) else "Invalid credentials"
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
+            detail=detail,
         )
 
     token = create_access_token({"sub": str(user.id)})
