@@ -14,11 +14,11 @@ const glass = {
 export default function FloatingNav() {
   return (
     <motion.nav
-      initial={{ y: -60, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      initial={{ y: -60, x: '-50%', opacity: 0 }}
+      animate={{ y: 0, x: '-50%', opacity: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.1 }}
       style={{ ...glass, boxShadow: 'var(--shadow)' }}
-      className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between px-5 py-2.5 rounded-full w-[92%] max-w-4xl"
+      className="fixed top-5 left-1/2 z-50 flex items-center justify-between px-5 py-2.5 rounded-full w-[92%] max-w-4xl"
     >
       {/* Brand */}
       <div className="flex items-center gap-2.5">

@@ -8,7 +8,14 @@ const STATUS_CONFIG = {
   expired:    { dot: 'bg-red-400', label: 'Session expired' },
 }
 
-export default function TopBar({ username, wsStatus, onLogout }) {
+const SidebarIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-1)' }}>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+  </svg>
+)
+
+export default function TopBar({ username, wsStatus, onLogout, onToggleSidebar, isSidebarOpen }) {
   const { dot, label } = STATUS_CONFIG[wsStatus] ?? STATUS_CONFIG.offline
   const initial = username.charAt(0).toUpperCase()
 
@@ -22,8 +29,16 @@ export default function TopBar({ username, wsStatus, onLogout }) {
         WebkitBackdropFilter: 'blur(20px)',
       }}
     >
-      {/* Brand */}
+      {/* Brand & Sidebar Toggle */}
       <div className="flex items-center gap-2.5">
+        <button
+          onClick={onToggleSidebar}
+          className="p-1.5 mr-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center justify-center"
+          title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+          aria-label="Toggle navigation sidebar"
+        >
+          <SidebarIcon />
+        </button>
         <span className="text-xl leading-none" aria-hidden>⚡</span>
         <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent tracking-tight">
           Zylo

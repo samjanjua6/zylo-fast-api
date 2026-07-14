@@ -91,6 +91,7 @@ export default function ChatPage() {
   const [sessions, setSessions] = useState([])
   const [activeSessionId, setActiveSessionId] = useState(null)
   const skipWsReconnectRef = useRef(false)
+  const [showSidebar, setShowSidebar] = useState(true)
 
   // Fetch all sessions on mount
   const fetchSessions = useCallback(async () => {
@@ -273,7 +274,13 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <TopBar username={username} wsStatus={wsStatus} onLogout={handleLogout} />
+      <TopBar 
+        username={username} 
+        wsStatus={wsStatus} 
+        onLogout={handleLogout} 
+        onToggleSidebar={() => setShowSidebar(!showSidebar)}
+        isSidebarOpen={showSidebar}
+      />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           sessions={sessions}
@@ -284,6 +291,7 @@ export default function ChatPage() {
           }}
           onNewSession={createNewSession}
           onDeleteSession={deleteSession}
+          isOpen={showSidebar}
         />
         <div className="flex flex-col flex-1 min-w-0">
           <MessageList messages={messages} username={username} />
