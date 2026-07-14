@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function formatMessageText(text) {
   if (!text) return '';
@@ -56,6 +56,8 @@ function BotIntro() {
 }
 
 function Message({ msg, username }) {
+  const [showStats, setShowStats] = useState(false)
+
   if (msg.type === 'system') {
     return (
       <div className="flex justify-center">
@@ -111,6 +113,34 @@ function Message({ msg, username }) {
         {/* Blinking cursor while streaming */}
         {msg.streaming && (
           <span className="inline-block w-0.5 h-3.5 ml-0.5 align-middle rounded-sm animate-pulse" style={{ background: 'var(--text-2)' }} />
+        )}
+
+        {/* Stats Button */}
+        {!isUser && msg.usage && (
+          <div className="mt-2 pt-1.5 border-t border-dashed" style={{ borderColor: 'var(--border)' }}>
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="text-[10px] uppercase font-bold tracking-wider hover:opacity-85 transition-opacity flex items-center gap-1.5 outline-none"
+              style={{ color: 'var(--text-2)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              {showStats ? "Hide Stats" : "Show Usage & Cost"}
+            </button>
+            {showStats && (
+              <div 
+                className="mt-1.5 p-2 rounded-lg text-[10px] font-mono flex flex-col gap-0.5" 
+                style={{ background: 'var(--glass-input)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
+              >
+                <div>Prompt Tokens: <span className="font-semibold text-sky-500">{msg.usage.prompt_tokens}</span></div>
+                <div>Completion Tokens: <span className="font-semibold text-sky-500">{msg.usage.completion_tokens}</span></div>
+                <div>Estimated Cost: <span className="font-semibold text-emerald-500">${msg.usage.cost.toFixed(6)}</span></div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

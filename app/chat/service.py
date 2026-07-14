@@ -54,19 +54,35 @@ async def stream_reply(
     messages.extend(_to_groq_history(history))
     messages.append({"role": "user", "content": user_message})
 
-    # Call the Groq API with streaming enabled
+    # Estimate prompt tokens locally (approx 3.9 characters per token)
+    full_prompt_text = system_prompt + " " + " ".join([m["content"] for m in messages[1:]])
+    prompt_tokens = max(1, int(len(full_prompt_text) / 3.9))
+
+    # Call the Groq API with streaming enabled (without stream_options keyword)
     stream = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # Defaulting to a fast, reliable Groq model
+        model="llama-3.3-70b-versatile",
         messages=messages,
         temperature=0.7,
         max_tokens=2048,
         stream=True,
     )
     
+    completion_text = ""
     async for chunk in stream:
-        content = chunk.choices[0].delta.content
-        if content:
-            yield content
+        if chunk.choices:
+            content = chunk.choices[0].delta.content
+            if content:
+                completion_text += content
+                yield content
+
+    # Calculate final completion token count (approx 3.9 characters per token) and cost
+    completion_tokens = max(1, int(len(completion_text) / 3.9))
+    # llama-3.3-70b-versatile rates: $0.59/M input, $0.79/M output
+    cost = (prompt_tokens * 0.59 / 1_000_000) + (completion_tokens * 0.79 / 1_000_000)
+    print(f"[Groq Usage] Model: llama-3.3-70b-versatile (Estimated) | Prompt Tokens: {prompt_tokens} | Completion Tokens: {completion_tokens} | Cost: ${cost:.8f}")
+    
+    # Yield usage data as a metadata string to be picked up by the WebSocket
+    yield f"[USAGE:{{\"prompt_tokens\": {prompt_tokens}, \"completion_tokens\": {completion_tokens}, \"cost\": {cost:.8f}}}]"
 
 async def generate_chat_title(prompt: str) -> str:
     """Generate a short 3-5 word title for a new chat session based on the first prompt."""
@@ -82,8 +98,18 @@ async def generate_chat_title(prompt: str) -> str:
             max_tokens=15,
             stream=False,
         )
+        
+        # Log token usage for title generation (fully supported in non-streaming responses)
+        if hasattr(response, "usage") and response.usage:
+            prompt_tokens = response.usage.prompt_tokens
+            completion_tokens = response.usage.completion_tokens
+            # llama-3.1-8b-instant rates: $0.05/M input, $0.08/M output
+            cost = (prompt_tokens * 0.05 / 1_000_000) + (completion_tokens * 0.08 / 1_000_000)
+            print(f"[Groq Usage] Model: llama-3.1-8b-instant | Prompt Tokens: {prompt_tokens} | Completion Tokens: {completion_tokens} | Cost: ${cost:.8f}")
+
         title = response.choices[0].message.content.strip().strip('"').strip("'")
         return title[:100]  # Ensure it fits in the DB column
-    except Exception:
+    except Exception as e:
+        print(f"[Groq Error] Failed to generate chat title: {e}")
         # Fallback if title generation fails
         return prompt[:30] + ("..." if len(prompt) > 30 else "")

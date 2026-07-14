@@ -214,6 +214,25 @@ export default function ChatPage() {
       fetchSessions() // to refresh sidebar
       return
     }
+    if (data.startsWith('[USAGE:')) {
+      const usageJson = data.replace('[USAGE:', '').replace(/\]$/, '')
+      try {
+        const usage = JSON.parse(usageJson)
+        setMessages(prev => {
+          const copy = [...prev]
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].type === 'bot') {
+              copy[i] = { ...copy[i], usage }
+              break
+            }
+          }
+          return copy
+        })
+      } catch (e) {
+        console.error("Failed to parse token usage statistics:", e)
+      }
+      return
+    }
     // First non-DONE message after quiet period → start a new bubble
     if (data === DONE_SENTINEL) {
       finishBotStream()

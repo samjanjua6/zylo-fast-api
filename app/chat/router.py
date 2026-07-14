@@ -152,6 +152,9 @@ async def chat_socket(
             full_reply = ""
             try:
                 async for token_chunk in stream_reply(history, user_message, retrieved_context):
+                    if token_chunk.startswith("[USAGE:"):
+                        await websocket.send_text(token_chunk)
+                        continue
                     full_reply += token_chunk
                     await websocket.send_text(token_chunk)
             except Exception as e:
