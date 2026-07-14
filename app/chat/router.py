@@ -5,24 +5,10 @@ from sqlalchemy.orm import Session
 
 from ..core.database import get_db
 from ..core.deps import get_current_user_ws
+from .service import stream_reply
 
 
 router = APIRouter(tags=["Chat"])
-
-
-def build_bot_reply(message: str) -> str:
-    text = message.strip()
-    lower_text = text.lower()
-
-    if not text:
-        return "AI bot: say something and I will reply."
-    if any(word in lower_text for word in ("hello", "hi", "hey")):
-        return "AI bot: hello. How can I help you today?"
-    if "name" in lower_text:
-        return "AI bot: I am your simple FastAPI demo bot."
-    if lower_text.endswith("?"):
-        return "AI bot: that is a good question. I am still a simple demo bot."
-    return f"AI bot: you said '{text}'"
 
 
 @router.websocket("/ws/chat")
@@ -31,10 +17,15 @@ async def chat_socket(
     token: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """Authenticated WebSocket chat endpoint.
+    """Authenticated WebSocket chat endpoint powered by Gemini AI.
 
     Clients must pass a valid JWT as the ``?token=`` query parameter.
     Unauthorized connections are rejected with close code 1008 (Policy Violation).
+
+    Protocol:
+        → client sends a plain-text message
+        ← server streams back the AI reply in chunks (token by token)
+        ← server sends the special sentinel "[DONE]" when the reply is complete
     """
     user = get_current_user_ws(token, db)
     if user is None:
@@ -42,11 +33,44 @@ async def chat_socket(
         return
 
     await websocket.accept()
-    await websocket.send_text(f"AI bot: connected. Hello {user.username}! Send me a message.")
+    await websocket.send_text(
+        f"Hello **{user.username}**! I'm Zylo AI, powered by Gemini. How can I help you today?"
+    )
+
+    # In-memory conversation history for this WebSocket session.
+    # Each turn: {"role": "user" | "model", "text": "..."}
+    history: list[dict] = []
 
     try:
         while True:
-            message = await websocket.receive_text()
-            await websocket.send_text(build_bot_reply(message))
+            user_message = await websocket.receive_text()
+
+            if not user_message.strip():
+                continue
+
+            # ── RAG hook ──────────────────────────────────────────────────────
+            # To enable RAG, retrieve relevant chunks here and pass them as
+            # `retrieved_context` to stream_reply().
+            #
+            # Example (plug in your own retriever):
+            #   chunks = await retriever.query(user_message, top_k=5)
+            #   retrieved_context = "\n\n".join(c.text for c in chunks)
+            #
+            retrieved_context = ""   # ← replace with your retriever call
+            # ─────────────────────────────────────────────────────────────────
+
+            # Stream the Gemini reply token-by-token
+            full_reply = ""
+            async for token_chunk in stream_reply(history, user_message, retrieved_context):
+                full_reply += token_chunk
+                await websocket.send_text(token_chunk)
+
+            # Signal to the client that streaming is complete
+            await websocket.send_text("[DONE]")
+
+            # Update conversation history
+            history.append({"role": "user",  "text": user_message})
+            history.append({"role": "model", "text": full_reply})
+
     except WebSocketDisconnect:
         return

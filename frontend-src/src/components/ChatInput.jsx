@@ -7,7 +7,7 @@ const SendIcon = () => (
   </svg>
 )
 
-export default function ChatInput({ onSend, disabled }) {
+export default function ChatInput({ onSend, disabled, isStreaming }) {
   const inputRef = useRef(null)
 
   function handleSubmit(e) {
@@ -18,6 +18,9 @@ export default function ChatInput({ onSend, disabled }) {
     inputRef.current.value = ''
     inputRef.current.focus()
   }
+
+  const isLocked = disabled || isStreaming
+  const placeholder = disabled ? 'Connecting…' : isStreaming ? 'Zylo AI is thinking…' : 'Send a message…'
 
   return (
     <footer
@@ -38,8 +41,8 @@ export default function ChatInput({ onSend, disabled }) {
         <input
           ref={inputRef}
           type="text"
-          placeholder={disabled ? 'Connecting…' : 'Send a message…'}
-          disabled={disabled}
+          placeholder={placeholder}
+          disabled={isLocked}
           maxLength={2000}
           aria-label="Message input"
           className="flex-1 bg-transparent outline-none text-sm disabled:cursor-not-allowed"
@@ -49,7 +52,7 @@ export default function ChatInput({ onSend, disabled }) {
         />
         <button
           type="submit"
-          disabled={disabled}
+          disabled={isLocked}
           aria-label="Send message"
           className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 transition-all duration-150 hover:opacity-85 hover:scale-105 active:scale-100 disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 12px rgba(99,102,241,0.4)' }}

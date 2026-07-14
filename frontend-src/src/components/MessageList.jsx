@@ -65,6 +65,10 @@ function Message({ msg, username }) {
         }
       >
         {msg.text}
+        {/* Blinking cursor while streaming */}
+        {msg.streaming && (
+          <span className="inline-block w-0.5 h-3.5 ml-0.5 align-middle rounded-sm animate-pulse" style={{ background: 'var(--text-2)' }} />
+        )}
       </div>
     </div>
   )

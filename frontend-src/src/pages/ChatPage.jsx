@@ -4,7 +4,9 @@ import TopBar from '../components/TopBar'
 import MessageList from '../components/MessageList'
 import ChatInput from '../components/ChatInput'
 
-function useWebSocket(token, onMessage, onStatusChange) {
+const DONE_SENTINEL = '[DONE]'
+
+function useWebSocket(token, onChunk, onStatusChange) {
   const wsRef = useRef(null)
   const reconnectTimer = useRef(null)
 
@@ -17,7 +19,7 @@ function useWebSocket(token, onMessage, onStatusChange) {
     wsRef.current = ws
 
     ws.onopen    = () => onStatusChange('online')
-    ws.onmessage = (e) => onMessage(e.data)
+    ws.onmessage = (e) => onChunk(e.data)
     ws.onclose   = (e) => {
       onStatusChange('offline')
       if (e.code === 1008) {
@@ -27,7 +29,7 @@ function useWebSocket(token, onMessage, onStatusChange) {
       }
     }
     ws.onerror = () => onStatusChange('error')
-  }, [token, onMessage, onStatusChange])
+  }, [token, onChunk, onStatusChange])
 
   useEffect(() => {
     connect()
@@ -51,16 +53,64 @@ export default function ChatPage() {
   const token    = localStorage.getItem('zylo_token') ?? ''
   const username = localStorage.getItem('zylo_username') ?? 'You'
 
-  const [messages, setMessages]   = useState([])
-  const [wsStatus, setWsStatus]   = useState('offline')
+  const [messages, setMessages]     = useState([])
+  const [wsStatus, setWsStatus]     = useState('offline')
+  const [isStreaming, setIsStreaming] = useState(false)
 
+  // Append a brand-new message bubble
   const addMessage = useCallback((text, type) => {
-    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), text, type }])
+    setMessages(prev => [...prev, { id: Date.now() + Math.random(), text, type, streaming: false }])
   }, [])
 
-  const handleMessage = useCallback((text) => {
-    addMessage(text, 'bot')
-  }, [addMessage])
+  // Start a streaming bot bubble (empty, will be filled token-by-token)
+  const startBotStream = useCallback(() => {
+    const id = Date.now() + Math.random()
+    setMessages(prev => [...prev, { id, text: '', type: 'bot', streaming: true }])
+    setIsStreaming(true)
+    return id
+  }, [])
+
+  // Append a token chunk to the last streaming bubble
+  const appendToLastBot = useCallback((chunk) => {
+    setMessages(prev => {
+      const copy = [...prev]
+      const last = copy[copy.length - 1]
+      if (last?.streaming) {
+        copy[copy.length - 1] = { ...last, text: last.text + chunk }
+      }
+      return copy
+    })
+  }, [])
+
+  // Mark the last streaming bubble as complete
+  const finishBotStream = useCallback(() => {
+    setMessages(prev => {
+      const copy = [...prev]
+      const last = copy[copy.length - 1]
+      if (last?.streaming) {
+        copy[copy.length - 1] = { ...last, streaming: false }
+      }
+      return copy
+    })
+    setIsStreaming(false)
+  }, [])
+
+  // Track whether we have an active streaming bubble
+  const streamingRef = useRef(false)
+
+  const handleChunk = useCallback((data) => {
+    // First non-DONE message after quiet period → start a new bubble
+    if (data === DONE_SENTINEL) {
+      finishBotStream()
+      streamingRef.current = false
+      return
+    }
+    if (!streamingRef.current) {
+      startBotStream()
+      streamingRef.current = true
+    }
+    appendToLastBot(data)
+  }, [startBotStream, appendToLastBot, finishBotStream])
 
   const handleStatus = useCallback((status) => {
     setWsStatus(status)
@@ -74,10 +124,11 @@ export default function ChatPage() {
     }
   }, [addMessage, navigate])
 
-  const { send } = useWebSocket(token, handleMessage, handleStatus)
+  const { send } = useWebSocket(token, handleChunk, handleStatus)
 
   function handleSend(text) {
-    if (!text.trim() || wsStatus !== 'online') return
+    if (!text.trim() || wsStatus !== 'online' || isStreaming) return
+    streamingRef.current = false
     addMessage(text, 'user')
     send(text)
   }
@@ -92,7 +143,7 @@ export default function ChatPage() {
     <div className="flex flex-col h-screen overflow-hidden">
       <TopBar username={username} wsStatus={wsStatus} onLogout={handleLogout} />
       <MessageList messages={messages} username={username} />
-      <ChatInput onSend={handleSend} disabled={wsStatus !== 'online'} />
+      <ChatInput onSend={handleSend} disabled={wsStatus !== 'online'} isStreaming={isStreaming} />
     </div>
   )
 }
