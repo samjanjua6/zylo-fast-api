@@ -116,6 +116,12 @@ async def chat_socket(
                 db.refresh(chat_session)
                 # Inform the frontend to update its active session
                 await websocket.send_text(f"[SESSION_ID:{chat_session.id}]")
+            elif chat_session.title == "New Chat":
+                chat_session.title = user_message[:30] + ("..." if len(user_message) > 30 else "")
+                db.commit()
+                db.refresh(chat_session)
+                # Send ID again to trigger a sidebar refresh on the frontend
+                await websocket.send_text(f"[SESSION_ID:{chat_session.id}]")
 
             # Save user message
             msg = ChatMessage(session_id=chat_session.id, role="user", content=user_message)

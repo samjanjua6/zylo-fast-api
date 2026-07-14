@@ -120,9 +120,24 @@ export default function ChatPage() {
     fetchMessages()
   }, [activeSessionId, token])
 
-  const createNewSession = () => {
-    setActiveSessionId(null)
-    setMessages([])
+  const createNewSession = async () => {
+    // Do not create a new session if the current session is already empty
+    if (messages.length === 0) return;
+
+    try {
+      const res = await fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const newSession = await res.json()
+        setSessions(prev => [newSession, ...prev])
+        setActiveSessionId(newSession.id)
+        setMessages([])
+      }
+    } catch (err) {
+      console.error("Failed to create new session", err)
+    }
   }
 
   // Append a brand-new message bubble
