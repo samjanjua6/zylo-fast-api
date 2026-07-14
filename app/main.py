@@ -8,8 +8,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .core.database import Base, engine
-from .models import User  # noqa: F401 — registers model with SQLAlchemy metadata
-from .routers import auth, chat, users
+from .users.model import User  # noqa: F401 — registers User table with SQLAlchemy metadata
+from .auth import router as auth_router
+from .chat import router as chat_router
+from .users import router as users_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -20,19 +22,19 @@ app = FastAPI(
     version="2.0.0",
 )
 
-app.include_router(auth.router)
-app.include_router(chat.router)
-app.include_router(users.router)
+app.include_router(auth_router)
+app.include_router(chat_router)
+app.include_router(users_router)
 
-# ── Static files ──────────────────────────────────────────────────────────────
+# ── Static files ───────────────────────────────────────────────────────────────
 # The React + Vite SPA builds to frontend/dist/.
-# /assets  → frontend/dist/assets  (Vite JS/CSS bundles)
+# /assets → frontend/dist/assets (Vite JS/CSS bundles)
 frontend_dist   = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 frontend_assets = frontend_dist / "assets"
 
 app.mount("/assets", StaticFiles(directory=frontend_assets), name="assets")
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── CORS ───────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -47,7 +49,7 @@ app.add_middleware(
 )
 
 
-# ── SPA routes ────────────────────────────────────────────────────────────────
+# ── SPA routes ─────────────────────────────────────────────────────────────────
 def _spa() -> FileResponse:
     """Return the React SPA shell — React Router handles client-side routing."""
     return FileResponse(frontend_dist / "index.html")
@@ -55,6 +57,12 @@ def _spa() -> FileResponse:
 
 @app.get("/", include_in_schema=False)
 def home():
+    """Landing page (React SPA)."""
+    return _spa()
+
+
+@app.get("/login", include_in_schema=False)
+def login_page():
     """Login / Sign-up page (React SPA)."""
     return _spa()
 
