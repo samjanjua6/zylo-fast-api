@@ -47,9 +47,9 @@ function BotIntro() {
   return (
     <div className="flex flex-col items-center justify-center flex-1 text-center py-16 gap-4">
       <div className="text-5xl leading-none" aria-hidden>🤖</div>
-      <h1 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Zylo AI Bot</h1>
+      <h1 className="text-lg font-semibold" style={{ color: 'var(--text-1)' }}>Zylo English Learning AI</h1>
       <p className="text-sm max-w-xs" style={{ color: 'var(--text-2)' }}>
-        Your authenticated assistant is ready. Send a message to start.
+        Your personal English language tutor is ready. Send a message to start practicing.
       </p>
     </div>
   )

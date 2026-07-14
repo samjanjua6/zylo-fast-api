@@ -49,10 +49,10 @@ export default function Hero() {
           className="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-[1.05]"
           style={{ color: 'var(--text-1)' }}
         >
-          Communicate with{' '}
+          Master English with{' '}
           <br />
           <span className="bg-gradient-to-br from-indigo-400 via-violet-400 to-violet-500 bg-clip-text text-transparent">
-            Absolute Clarity.
+            Zylo Learning AI.
           </span>
         </motion.h1>
 
@@ -62,7 +62,7 @@ export default function Hero() {
           className="text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed"
           style={{ color: 'var(--text-2)' }}
         >
-          The ultra-minimalist, real-time chat infrastructure. Secured with JWT, powered by WebSockets, and designed to feel completely weightless.
+          Your personal, patient, and highly encouraging English Language Tutor. Improve your grammar, fluency, and vocabulary through natural conversation and structured feedback.
         </motion.p>
 
         {/* CTAs */}
