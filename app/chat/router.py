@@ -61,6 +61,22 @@ def get_session_messages(
     return [{"id": m.id, "role": m.role, "content": m.content, "created_at": m.created_at} for m in messages]
 
 
+@router.delete("/api/chat/sessions/{session_id}")
+def delete_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Delete a chat session."""
+    session = db.scalar(select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user.id))
+    if not session:
+        return {"success": False, "error": "Session not found or unauthorized"}
+    
+    db.delete(session)
+    db.commit()
+    return {"success": True}
+
+
 @router.websocket("/ws/chat")
 async def chat_socket(
     websocket: WebSocket,

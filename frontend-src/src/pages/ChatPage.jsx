@@ -228,6 +228,24 @@ export default function ChatPage() {
     navigate('/login', { replace: true })
   }
 
+  const deleteSession = async (id) => {
+    try {
+      const res = await fetch(`/api/chat/sessions/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        setSessions(prev => prev.filter(s => s.id !== id))
+        if (activeSessionId === id) {
+          setActiveSessionId(null)
+          setMessages([])
+        }
+      }
+    } catch (err) {
+      console.error("Failed to delete session", err)
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <TopBar username={username} wsStatus={wsStatus} onLogout={handleLogout} />
@@ -237,6 +255,7 @@ export default function ChatPage() {
           activeSessionId={activeSessionId}
           onSelectSession={setActiveSessionId}
           onNewSession={createNewSession}
+          onDeleteSession={deleteSession}
         />
         <div className="flex flex-col flex-1 min-w-0">
           <MessageList messages={messages} username={username} />
