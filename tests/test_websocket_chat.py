@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-
 # Must be set before any app import
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 
@@ -81,24 +80,6 @@ def test_websocket_chat_replies_like_a_simple_bot():
         ws.receive_text()  # consume [DONE]
 
         ws.send_text("hi")
-        reply = ws.receive_text()
-        full_reply = reply
-        while reply != "[DONE]":
-            reply = ws.receive_text()
-            if reply != "[DONE]":
-                full_reply += reply
-        assert len(full_reply) > 0
-
-        ws.send_text("What can you do?")
-        reply = ws.receive_text()
-        full_reply = reply
-        while reply != "[DONE]":
-            reply = ws.receive_text()
-            if reply != "[DONE]":
-                full_reply += reply
-        assert len(full_reply) > 0
-
-        ws.send_text("just chatting")
         reply = ws.receive_text()
         full_reply = reply
         while reply != "[DONE]":

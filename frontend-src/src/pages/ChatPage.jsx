@@ -3,19 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar'
 import MessageList from '../components/MessageList'
 import ChatInput from '../components/ChatInput'
+import Sidebar from '../components/Sidebar'
 
 const DONE_SENTINEL = '[DONE]'
 
-function useWebSocket(token, onChunk, onStatusChange) {
+function useWebSocket(token, sessionId, onChunk, onStatusChange) {
   const wsRef = useRef(null)
   const reconnectTimer = useRef(null)
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.close(1000)
+    }
+    
+    if (!token) return
+
     onStatusChange('connecting')
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${proto}//${location.host}/ws/chat?token=${encodeURIComponent(token)}`)
+    let url = `${proto}//${location.host}/ws/chat?token=${encodeURIComponent(token)}`
+    if (sessionId) {
+      url += `&session_id=${sessionId}`
+    }
+    
+    const ws = new WebSocket(url)
     wsRef.current = ws
 
     ws.onopen    = () => onStatusChange('online')
@@ -29,7 +40,7 @@ function useWebSocket(token, onChunk, onStatusChange) {
       }
     }
     ws.onerror = () => onStatusChange('error')
-  }, [token, onChunk, onStatusChange])
+  }, [token, sessionId, onChunk, onStatusChange])
 
   useEffect(() => {
     connect()
@@ -56,6 +67,74 @@ export default function ChatPage() {
   const [messages, setMessages]     = useState([])
   const [wsStatus, setWsStatus]     = useState('offline')
   const [isStreaming, setIsStreaming] = useState(false)
+  const [sessions, setSessions] = useState([])
+  const [activeSessionId, setActiveSessionId] = useState(null)
+
+  // Fetch all sessions on mount
+  const fetchSessions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chat/sessions', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSessions(data)
+        if (data.length > 0 && !activeSessionId) {
+          setActiveSessionId(data[0].id)
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch sessions", err)
+    }
+  }, [token, activeSessionId])
+
+  useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
+
+  // Fetch messages when active session changes
+  useEffect(() => {
+    if (!activeSessionId) {
+      setMessages([])
+      return
+    }
+    
+    async function fetchMessages() {
+      try {
+        const res = await fetch(`/api/chat/sessions/${activeSessionId}/messages`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setMessages(data.map(m => ({
+            id: m.id,
+            text: m.content,
+            type: m.role === 'model' ? 'bot' : 'user',
+            streaming: false
+          })))
+        }
+      } catch (err) {
+        console.error("Failed to fetch messages", err)
+      }
+    }
+    fetchMessages()
+  }, [activeSessionId, token])
+
+  const createNewSession = async () => {
+    try {
+      const res = await fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const newSession = await res.json()
+        setSessions(prev => [newSession, ...prev])
+        setActiveSessionId(newSession.id)
+      }
+    } catch (err) {
+      console.error("Failed to create new session", err)
+    }
+  }
 
   // Append a brand-new message bubble
   const addMessage = useCallback((text, type) => {
@@ -124,13 +203,19 @@ export default function ChatPage() {
     }
   }, [addMessage, navigate])
 
-  const { send } = useWebSocket(token, handleChunk, handleStatus)
+  const { send } = useWebSocket(token, activeSessionId, handleChunk, handleStatus)
 
   function handleSend(text) {
     if (!text.trim() || wsStatus !== 'online' || isStreaming) return
     streamingRef.current = false
     addMessage(text, 'user')
     send(text)
+    
+    // Auto-create session on first message if none active
+    if (!activeSessionId && sessions.length === 0) {
+      // It's created implicitly by websocket, we might just want to refresh sessions
+      setTimeout(fetchSessions, 1000)
+    }
   }
 
   function handleLogout() {
@@ -142,8 +227,18 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <TopBar username={username} wsStatus={wsStatus} onLogout={handleLogout} />
-      <MessageList messages={messages} username={username} />
-      <ChatInput onSend={handleSend} disabled={wsStatus !== 'online'} isStreaming={isStreaming} />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={setActiveSessionId}
+          onNewSession={createNewSession}
+        />
+        <div className="flex flex-col flex-1 min-w-0">
+          <MessageList messages={messages} username={username} />
+          <ChatInput onSend={handleSend} disabled={wsStatus !== 'online'} isStreaming={isStreaming} />
+        </div>
+      </div>
     </div>
   )
 }

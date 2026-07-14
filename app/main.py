@@ -8,7 +8,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .core.database import Base, engine
-from .users.model import User  # noqa: F401 — registers User table with SQLAlchemy metadata
+from .users.model import User  # noqa: F401
+from .chat.model import ChatSession, ChatMessage  # noqa: F401
 from .auth.router import router as auth_router
 from .chat.router import router as chat_router
 from .users.router import router as users_router
