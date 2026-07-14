@@ -114,7 +114,7 @@ async def chat_socket(
     # Send welcome message only if it's a completely new chat with no history
     if not history:
         await websocket.send_text(
-            f"Aao **{user.username}**, baitho. Hum Munna Bhaiya hain, Mirzapur ke agle king. Bol, kya bawal laaye ho aaj?"
+            f"Hello **{user.username}**! I am your English Language Tutor. I am excited to help you practice and improve your English. Let's start chatting! How was your day?"
         )
         await websocket.send_text("[DONE]")
 

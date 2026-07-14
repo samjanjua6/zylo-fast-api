@@ -1,5 +1,48 @@
 import { useEffect, useRef } from 'react'
 
+function formatMessageText(text) {
+  if (!text) return '';
+  
+  // Split by newlines
+  const lines = text.split('\n');
+  
+  return lines.map((line, index) => {
+    let cleanLine = line.trim();
+    let isBullet = false;
+    
+    // Check for bullet point (* or -)
+    if (cleanLine.startsWith('*') || cleanLine.startsWith('-')) {
+      isBullet = true;
+      // Remove the bullet prefix
+      cleanLine = cleanLine.replace(/^[*+-]\s*/, '');
+    }
+    
+    // Parse bold text (**text**)
+    const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+    const content = parts.map((part, pIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={pIdx} className="font-bold">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    if (isBullet) {
+      return (
+        <div key={index} className="flex gap-2 items-start mt-1 pl-2">
+          <span className="text-indigo-400 select-none">•</span>
+          <span className="flex-1">{content}</span>
+        </div>
+      );
+    }
+    
+    return (
+      <p key={index} className={cleanLine === '' ? 'h-2' : ''}>
+        {content}
+      </p>
+    );
+  });
+}
+
 function BotIntro() {
   return (
     <div className="flex flex-col items-center justify-center flex-1 text-center py-16 gap-4">
@@ -46,7 +89,7 @@ function Message({ msg, username }) {
 
       {/* Bubble */}
       <div
-        className="max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed"
+        className="max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed space-y-1"
         style={
           isUser
             ? {
@@ -64,7 +107,7 @@ function Message({ msg, username }) {
               }
         }
       >
-        {msg.text}
+        {formatMessageText(msg.text)}
         {/* Blinking cursor while streaming */}
         {msg.streaming && (
           <span className="inline-block w-0.5 h-3.5 ml-0.5 align-middle rounded-sm animate-pulse" style={{ background: 'var(--text-2)' }} />
