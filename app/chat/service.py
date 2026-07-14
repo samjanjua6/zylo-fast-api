@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+import random
 from typing import AsyncGenerator
 
-from groq import AsyncGroq
+from groq import AsyncGroq, RateLimitError, APITimeoutError, APIConnectionError
 
 from ..core.config import settings
 from .prompts import build_system_prompt
@@ -11,6 +13,26 @@ from .prompts import build_system_prompt
 def _client() -> AsyncGroq:
     """Return a configured async Groq client."""
     return AsyncGroq(api_key=settings.GROQ_API_KEY)
+
+
+async def call_with_retry(func, *args, max_retries=3, initial_delay=1.0, backoff_factor=2.0, **kwargs):
+    """
+    Call an async function with exponential backoff and jitter for RateLimit, Timeout, and Connection errors.
+    """
+    delay = initial_delay
+    for attempt in range(max_retries + 1):
+        try:
+            return await func(*args, **kwargs)
+        except (RateLimitError, APITimeoutError, APIConnectionError) as e:
+            if attempt == max_retries:
+                raise e
+            
+            # Calculate backoff with random jitter (0.8 - 1.2)
+            jitter = random.uniform(0.8, 1.2)
+            sleep_time = delay * jitter
+            print(f"[Groq Retry] Attempt {attempt + 1} failed with {type(e).__name__}. Retrying in {sleep_time:.2f}s...")
+            await asyncio.sleep(sleep_time)
+            delay *= backoff_factor
 
 
 def _to_groq_history(history: list[dict]) -> list[dict]:
@@ -27,6 +49,29 @@ def _to_groq_history(history: list[dict]) -> list[dict]:
         role = "assistant" if msg["role"] == "model" else msg["role"]
         groq_history.append({"role": role, "content": msg["text"]})
     return groq_history
+
+
+async def is_harmful_input(text: str) -> bool:
+    """
+    Check if the user input violates safety/moderation guidelines using Llama Guard.
+    Returns True if the content is harmful/unsafe, False otherwise.
+    """
+    client = _client()
+    try:
+        response = await call_with_retry(
+            client.chat.completions.create,
+            model="llama-guard-3-8b",
+            messages=[{"role": "user", "content": text}],
+            temperature=0.0,
+            max_tokens=10,
+            stream=False,
+        )
+        content = response.choices[0].message.content.strip().lower()
+        print(f"[Moderation Check] Input: {text[:30]}... | Result: {content}")
+        return "unsafe" in content
+    except Exception as e:
+        print(f"[Moderation Error] Safety check failed: {e}")
+        return False
 
 
 async def stream_reply(
@@ -46,6 +91,11 @@ async def stream_reply(
     Yields:
         Text chunks as they arrive from the model.
     """
+    # 1. Content Moderation Check
+    if await is_harmful_input(user_message):
+        yield "[Safety Warning: Your message has been flagged by our content moderation system. Please keep the conversation safe, respectful, and educational.]"
+        return
+
     client = _client()
     system_prompt = build_system_prompt(retrieved_context)
 
@@ -58,14 +108,20 @@ async def stream_reply(
     full_prompt_text = system_prompt + " " + " ".join([m["content"] for m in messages[1:]])
     prompt_tokens = max(1, int(len(full_prompt_text) / 3.9))
 
-    # Call the Groq API with streaming enabled (without stream_options keyword)
-    stream = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=2048,
-        stream=True,
-    )
+    # Call the Groq API with streaming enabled (without stream_options keyword) with retry
+    try:
+        stream = await call_with_retry(
+            client.chat.completions.create,
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=True,
+        )
+    except (RateLimitError, APITimeoutError, APIConnectionError) as e:
+        print(f"[Groq Error] Chat completion failed after retries: {e}")
+        yield f"\n\n[System Error: The English Tutor is currently busy (Rate Limit/Timeout). Please try again in a few seconds. Details: {e}]"
+        return
     
     completion_text = ""
     async for chunk in stream:
@@ -88,7 +144,8 @@ async def generate_chat_title(prompt: str) -> str:
     """Generate a short 3-5 word title for a new chat session based on the first prompt."""
     client = _client()
     try:
-        response = await client.chat.completions.create(
+        response = await call_with_retry(
+            client.chat.completions.create,
             model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that generates extremely short titles (2-5 words max) for a conversation based on the user's first message. Do NOT use quotes around the title. Do NOT add any preamble. Just output the short title."},
