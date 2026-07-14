@@ -7,12 +7,16 @@ import Sidebar from '../components/Sidebar'
 
 const DONE_SENTINEL = '[DONE]'
 
-function useWebSocket(token, sessionId, onChunk, onStatusChange) {
+function useWebSocket(token, sessionId, onChunk, onStatusChange, skipReconnectRef) {
   const wsRef = useRef(null)
   const reconnectTimer = useRef(null)
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
+      if (skipReconnectRef?.current) {
+        skipReconnectRef.current = false
+        return
+      }
       wsRef.current.close(1000)
     }
     
@@ -40,15 +44,18 @@ function useWebSocket(token, sessionId, onChunk, onStatusChange) {
       }
     }
     ws.onerror = () => onStatusChange('error')
-  }, [token, sessionId, onChunk, onStatusChange])
+  }, [token, sessionId, onChunk, onStatusChange, skipReconnectRef])
 
   useEffect(() => {
     connect()
     return () => {
       clearTimeout(reconnectTimer.current)
+      if (skipReconnectRef?.current) {
+        return
+      }
       wsRef.current?.close(1000)
     }
-  }, [connect])
+  }, [connect, skipReconnectRef])
 
   const send = useCallback((text) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -83,6 +90,7 @@ export default function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [sessions, setSessions] = useState([])
   const [activeSessionId, setActiveSessionId] = useState(null)
+  const skipWsReconnectRef = useRef(false)
 
   // Fetch all sessions on mount
   const fetchSessions = useCallback(async () => {
@@ -147,6 +155,7 @@ export default function ChatPage() {
       if (res.ok) {
         const newSession = await res.json()
         setSessions(prev => [newSession, ...prev])
+        skipWsReconnectRef.current = false
         setActiveSessionId(newSession.id)
         setMessages([])
       }
@@ -199,6 +208,7 @@ export default function ChatPage() {
   const handleChunk = useCallback((data) => {
     if (data.startsWith('[SESSION_ID:')) {
       const newId = parseInt(data.replace('[SESSION_ID:', '').replace(']', ''))
+      skipWsReconnectRef.current = true
       setActiveSessionId(newId)
       fetchSessions() // to refresh sidebar
       return
@@ -228,7 +238,7 @@ export default function ChatPage() {
     }
   }, [addMessage, navigate])
 
-  const { send } = useWebSocket(token, activeSessionId, handleChunk, handleStatus)
+  const { send } = useWebSocket(token, activeSessionId, handleChunk, handleStatus, skipWsReconnectRef)
 
   function handleSend(text) {
     if (!text.trim() || wsStatus !== 'online' || isStreaming) return
@@ -268,7 +278,10 @@ export default function ChatPage() {
         <Sidebar
           sessions={sessions}
           activeSessionId={activeSessionId}
-          onSelectSession={setActiveSessionId}
+          onSelectSession={(id) => {
+            skipWsReconnectRef.current = false
+            setActiveSessionId(id)
+          }}
           onNewSession={createNewSession}
           onDeleteSession={deleteSession}
         />
