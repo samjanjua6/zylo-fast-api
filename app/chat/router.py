@@ -36,6 +36,7 @@ async def chat_socket(
     await websocket.send_text(
         f"Aao **{user.username}**, baitho. Hum Munna Bhaiya hain, Mirzapur ke agle king. Bol, kya bawal laaye ho aaj?"
     )
+    await websocket.send_text("[DONE]")
 
     # In-memory conversation history for this WebSocket session.
     # Each turn: {"role": "user" | "model", "text": "..."}
