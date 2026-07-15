@@ -1,152 +1,96 @@
-# Zylo — FastAPI Chat
+# Zylo English Learning AI — Chat & Tutor System
 
-A full-stack FastAPI project featuring **JWT authentication**, a **secured WebSocket chat**, and a polished two-page browser frontend.
+A highly resilient, full-stack chatbot application featuring a **FastAPI backend** powered by **Groq AI (Llama 3.3 & Llama Guard)**, a PostgreSQL database, Google OAuth 2.0, and a premium **React + Tailwind CSS** frontend.
 
-## Features
+---
 
-- `POST /signup` — register a new user
-- `POST /login` — authenticate and receive a signed **JWT**
-- `GET /users/me` — fetch the current user (requires Bearer token)
-- `GET /users/{user_id}` — fetch any user by ID
-- `WS /ws/chat?token=<jwt>` — authenticated WebSocket chat; rejects connections without a valid token (close code 1008)
+## Key Features
 
-## Frontend
+1.  **AI English Tutor Persona**: Programmed to provide patient, beginner-friendly explanations in structured, bullet-pointed formatting.
+2.  **Google OAuth 2.0 & JWT**: Supports traditional credentials as well as seamless Google Sign-in. Secures REST endpoints and WebSocket connections with signed JSON Web Tokens (JWT).
+3.  **Real-time Streaming WebSockets**: Streams response content token-by-token directly to the user bubble.
+4.  **Llama Guard Moderation**: Automatically filters user queries through Groq's `llama-guard-3-8b` safety classifier model before hitting the main LLM.
+5.  **Token Usage Dashboard**: Estimates prompt/completion token count and tracks API cost in real-time, toggled directly under bot response bubbles.
+6.  **Expontential Retry-with-Backoff**: Keeps connection requests stable using retry mechanisms with backoff and jitter during Groq rate limits (429) or timeouts.
+7.  **Persisted Theme System**: Clean default **Light Mode** (White canvas, Sky Blue and Sunshine Yellow brand highlights, Dark Blue-Gray text) and **Dark Mode** toggle stored in localStorage.
 
-The frontend is a **React + Tailwind CSS** SPA built with Vite, served by FastAPI from `frontend/dist/`.
+---
 
-Key design rules enforced in the components:
-- **State separation** — only one form (Login or Signup) is ever mounted at a time
-- **Segmented pill** at the top of the card switches between the two states
-- **Accent gradient** (`indigo→violet`) is used **only** on primary CTA buttons (`SubmitButton`) — nowhere else
-- Inputs have transparent-dark backgrounds and a subtle indigo focus ring
-- Card sits on a deeper canvas (`#0c0e17`) with a lighter surface (`#13161f`)
-
-### Component tree
-
-```
-App (Router)
-├── AuthPage        — Login/Signup container + pill control
-│   ├── LoginForm   — username/password fields
-│   ├── SignupForm  — username/email/password fields
-│   ├── InputField  — reusable labeled input primitive
-│   └── SubmitButton — gradient CTA (the only accent element)
-└── ChatPage        — WebSocket orchestration
-    ├── TopBar      — brand, WS status dot, user info, logout
-    ├── MessageList — scrollable message bubbles
-    └── ChatInput   — floating input bar + send button
-```
-
-## Project Structure
+## Directory Overview
 
 ```text
-.
-├── main.py                    # Uvicorn entry point
-├── requirements.txt
-├── .env.example               # Copy to .env and fill in your values
-├── .gitignore
-├── app/
-│   ├── main.py                # FastAPI app factory
-│   ├── core/
-│   │   ├── config.py          # Pydantic-settings (reads .env)
-│   │   ├── database.py        # SQLAlchemy engine + session
-│   │   ├── security.py        # Password hashing + JWT create/decode
-│   │   └── deps.py            # Reusable FastAPI dependencies
-│   ├── models/
-│   │   └── user.py            # User ORM model
-│   ├── routers/
-│   │   ├── auth.py            # /signup  /login
-│   │   ├── chat.py            # /ws/chat (auth-secured)
-│   │   └── users.py           # /users/me  /users/{id}
-│   └── schemas/
-│       ├── auth.py            # LoginRequest  TokenResponse
-│       └── user.py            # UserSignup  UserRead
+zylo-fast-api/
+├── app/                        # FastAPI Backend Code
+│   ├── auth/                   # Traditional Login, Signup & Google OAuth Router
+│   ├── chat/                   # Prompts, WebSocket Router & LLM Logic
+│   ├── core/                   # DB Config, Security Utility, and Token Guards
+│   ├── users/                  # User DB Model & Profile Router
+│   └── main.py                 # App entry point (mounts SPA & API routes)
+├── frontend-src/               # React Frontend Source Code (Vite + Tailwind)
+│   ├── src/
+│   │   ├── components/         # Sidebar, MessageList, TopBar UI blocks
+│   │   ├── contexts/           # Light/Dark Theme Context
+│   │   ├── pages/              # Landing, Login, and Chat pages
+│   │   └── App.jsx             # React routing & Private guards
+│   └── vite.config.js          # Port proxies for dev
 ├── frontend/
-│   ├── index.html             # Login / Sign-up page
-│   ├── chat.html              # Chat page (requires JWT in localStorage)
-│   ├── styles.css             # Shared styles (Inter font, dark glass)
-│   ├── app.js                 # Auth page logic
-│   └── chat.js                # Chat page logic (WebSocket + auth guard)
-└── tests/
-    ├── test_main.py
-    └── test_websocket_chat.py
+│   └── dist/                   # Compiled static bundle files served by FastAPI
+└── requirements.txt
 ```
 
-## Requirements
+---
 
-- Python 3.11+
-- PostgreSQL (running locally)
+## Setup & Local Installation
 
-## Quick Start
+### 1. Requirements
+*   Python 3.11+
+*   Node.js 18+ (for building React)
+*   PostgreSQL database running locally
 
+### 2. Backend Setup
+1.  Create and activate a virtual environment:
+    ```powershell
+    python -m venv .venv
+    .venv\Scripts\Activate.ps1
+    ```
+2.  Install requirements:
+    ```powershell
+    pip install -r requirements.txt
+    ```
+3.  Create your local `.env` file:
+    ```powershell
+    copy .env.example .env
+    ```
+4.  Fill in your API credentials:
+    *   `GROQ_API_KEY`: Groq Cloud API access key.
+    *   `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Credentials from Google Cloud Console.
+    *   `GOOGLE_REDIRECT_URI`: Set to `http://localhost:8000/auth/google/callback` for local development.
+
+### 3. Frontend Compilation
+1.  Navigate to the frontend source, install dependencies, and compile:
+    ```powershell
+    cd frontend-src
+    npm install
+    npm run build
+    cd ..
+    ```
+    *This creates the production assets in `frontend/dist/` for FastAPI to serve.*
+
+### 4. Running the Server
+Run the Uvicorn server:
 ```powershell
-# 1. Create & activate virtual environment
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-
-# 2. Install dependencies
-python -m pip install -r requirements.txt
-
-# 3. Configure (optional — defaults match a local Postgres install)
-copy .env.example .env
-# Edit .env with your POSTGRES_PASSWORD, SECRET_KEY, etc.
-
-# 4. Start the server
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
+Open your browser and navigate to:
+*   **Landing Page**: `http://localhost:8000/`
+*   **Sign In / Sign Up**: `http://localhost:8000/login`
+*   **AI Chat Workspace**: `http://localhost:8000/chat`
+*   **Interactive API Docs (Swagger)**: `http://localhost:8000/docs`
 
-Open:
+---
 
-| Page | URL |
-|---|---|
-| Login / Sign-up | http://127.0.0.1:8000/ |
-| Chat | http://127.0.0.1:8000/chat |
-| Swagger UI | http://127.0.0.1:8000/docs |
-
-## Database Configuration
-
-The app resolves the connection string in this order:
-
-1. `DATABASE_URL` env var (takes priority — used by tests with SQLite)
-2. Individual `POSTGRES_*` vars (or defaults below)
-
-Default local PostgreSQL connection:
-
-| Setting | Default |
-|---|---|
-| Host | `localhost` |
-| Port | `5433` |
-| Database | `Testing` |
-| User | `postgres` |
-| Password | `12345` |
-
-## Authentication Flow
-
-1. **Sign up** → `POST /signup` — creates user, returns public profile
-2. **Log in** → `POST /login` — verifies credentials, returns a signed **JWT**
-3. **Use token** → pass as `Authorization: Bearer <token>` header for REST endpoints, or as `?token=<token>` query param for WebSocket connections
-4. **JWT expires** after `ACCESS_TOKEN_EXPIRE_MINUTES` (default: 60 min). The chat page automatically redirects to login when the server closes with code 1008.
-
-## WebSocket Security
-
-```
-ws://localhost:8000/ws/chat?token=<your_jwt>
-```
-
-- ✅ Valid token → connection accepted, greeted by name
-- ❌ Missing / invalid token → server closes with **code 1008** (Policy Violation)
-
-## Running Tests
-
-Tests use SQLite in-memory — no Postgres needed.
-
+## Testing & Verification
+Tests use SQLite in-memory, avoiding the need for a live Postgres connection during verification:
 ```powershell
 pytest -v
 ```
-
-## Generating a Secure SECRET_KEY
-
-```powershell
-.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
-```
-
-Paste the output as `SECRET_KEY` in your `.env` file.# ai-chatbot
